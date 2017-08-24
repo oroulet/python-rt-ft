@@ -28,7 +28,7 @@ class ATIRDT(threading.Thread):
     """Class for sampling the ATI force sensor over UDP+RDT in both single
     shot and streaming mode.
     """
-    
+
     REQ_STRUCT = struct.Struct('>HHI')
     FT_STRUCT = struct.Struct('>IIIiiiiii')
 
@@ -36,7 +36,7 @@ class ATIRDT(threading.Thread):
         threading.Thread.__init__(self)
         self.daemon = True
         self._rdt_addr = (rdt_host, rdt_port)
-        self._bind_addr = (bind_host, rdt_port)#
+        self._bind_addr = (bind_host, rdt_port)
         self._sock = socket.socket(type=socket.SOCK_DGRAM)
         self._sock.settimeout(0.01)
         self._sock.bind(self._bind_addr)
@@ -48,7 +48,7 @@ class ATIRDT(threading.Thread):
         self._stream_flag = threading.Event()
         self.__stop = False
         self.start()
-        
+
     @property
     def is_streaming(self):
         return self._mode == ATIModes.STREAM
@@ -100,7 +100,7 @@ class ATIRDT(threading.Thread):
 
     def _req_single_ft(self):
         self._sock.sendto(ATIRDT.REQ_STRUCT.pack(0x1234, 2, 1),
-                        self._rdt_addr)
+                          self._rdt_addr)
         return self._recv_ft()
 
     def get_ft(self):
@@ -119,12 +119,11 @@ class ATIRDT(threading.Thread):
                 else:
                     ft = new_ft
             return ft
-        
+
     ft = property(get_ft)
-    
+
     def run(self):
         while not self.__stop:
             self._stream_flag.wait()
             with self._ft_lock:
                 self._latest_ft = self._recv_ft()
-                    
