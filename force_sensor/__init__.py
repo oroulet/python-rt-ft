@@ -10,3 +10,6 @@ __license__ = "GPLv3"
 __maintainer__ = "Morten Lind"
 __email__ = "morten.lind@sintef.no"
 __status__ = "Development"
+
+from .ati_rdt import ATIRDT
+from .optoforce import OptoForce

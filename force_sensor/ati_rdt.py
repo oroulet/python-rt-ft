@@ -19,7 +19,7 @@ import struct
 import numpy as np
 
 
-class ATIModes(enum.Enum):
+class Modes(enum.Enum):
     STREAM = 2
     SINGLE = 0
 
@@ -38,10 +38,11 @@ class ATIRDT(threading.Thread):
         self._rdt_addr = (rdt_host, rdt_port)
         self._bind_addr = (bind_host, rdt_port)
         self._sock = socket.socket(type=socket.SOCK_DGRAM)
-        self._sock.settimeout(0.01)
+        self._sock.settimeout(0.005)
         self._sock.bind(self._bind_addr)
-        self._mode = ATIModes.SINGLE
+        self._mode = Modes.SINGLE
         self._cycle_time = 0.0
+        self._enc_to_si = np.array(6 * [1.0e-6])
         self._bias = np.zeros(6)
         self._latest_ft = None
         self._ft_lock = threading.Lock()
@@ -51,30 +52,30 @@ class ATIRDT(threading.Thread):
 
     @property
     def is_streaming(self):
-        return self._mode == ATIModes.STREAM
+        return self._mode == Modes.STREAM
 
     @property
     def is_single(self):
-        return self._mode == ATIModes.SINGLE
+        return self._mode == Modes.SINGLE
 
     def start_stream(self):
-        if self._mode == ATIModes.STREAM:
+        if self._mode == Modes.STREAM:
             # Already in streaming mode
             return False
         self._sock.sendto(ATIRDT.REQ_STRUCT.pack(0x1234, 2, 0),
                           self._rdt_addr)
-        self._mode = ATIModes.STREAM
+        self._mode = Modes.STREAM
         self._stream_flag.set()
         return True
 
     def stop_stream(self):
-        if self._mode == ATIModes.SINGLE:
+        if self._mode == Modes.SINGLE:
             # Already in single mode
             return False
         self._stream_flag.clear()
         self._sock.sendto(ATIRDT.REQ_STRUCT.pack(0x1234, 0, 0),
                           self._rdt_addr)
-        self._mode = ATIModes.SINGLE
+        self._mode = Modes.SINGLE
         # Empty the receive buffer
         while self._recv_ft() is not None:
             pass
@@ -96,7 +97,7 @@ class ATIRDT(threading.Thread):
         except socket.timeout:
             return None
         else:
-            return 1.0e-6 * np.array(data[3:]) - self._bias
+            return self._enc_to_si * np.array(data[3:]) - self._bias
 
     def _req_single_ft(self):
         self._sock.sendto(ATIRDT.REQ_STRUCT.pack(0x1234, 2, 1),
@@ -104,7 +105,7 @@ class ATIRDT(threading.Thread):
         return self._recv_ft()
 
     def get_ft(self):
-        if self._mode == ATIModes.STREAM:
+        if self._mode == Modes.STREAM:
             with self._ft_lock:
                 return self._latest_ft
         else:
