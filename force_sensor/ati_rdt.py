@@ -89,7 +89,9 @@ class ATIRDT(threading.Thread):
 
     def sample_bias(self):
         with self._ft_lock:
-            self._bias = self.ft
+            while self._req_single_ft() is None:
+                pass
+            self._bias = self._raw_ft.copy()
 
     def _recv_ft(self):
         try:
@@ -97,7 +99,8 @@ class ATIRDT(threading.Thread):
         except socket.timeout:
             return None
         else:
-            return self._enc_to_si * np.array(data[3:]) - self._bias
+            self._raw_ft = self._enc_to_si * np.array(data[3:])
+            return self._raw_ft - self._bias
 
     def _req_single_ft(self):
         self._sock.sendto(ATIRDT.REQ_STRUCT.pack(0x1234, 2, 1),
