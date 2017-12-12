@@ -87,11 +87,14 @@ class ATIRDT(threading.Thread):
         with self._ft_lock:
             self._bias = np.zeros(6)
 
-    def sample_bias(self):
+    def sample_bias(self, N=100):
         with self._ft_lock:
-            while self._req_single_ft() is None:
-                pass
-            self._bias = self._raw_ft.copy()
+            self._bias = np.zeros(6)
+            for i in range(N):
+                while self._req_single_ft() is None:
+                    pass
+                self._bias += self._raw_ft.copy()
+            self._bias /= N
 
     def _recv_ft(self):
         try:
