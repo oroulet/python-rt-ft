@@ -48,7 +48,6 @@ class ATIRDT(threading.Thread):
         self._ft_lock = threading.Lock()
         self._stream_flag = threading.Event()
         self.__stop = False
-        self.start()
 
     @property
     def is_streaming(self):
@@ -134,3 +133,6 @@ class ATIRDT(threading.Thread):
             self._stream_flag.wait()
             with self._ft_lock:
                 self._latest_ft = self._recv_ft()
+
+    def stop(self):
+        self.__stop = True
